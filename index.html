@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerGuard - Electricity Theft Detection</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Space Grotesk', sans-serif; }
+    
+    @keyframes pulse-alert {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    
+    @keyframes slide-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .alert-pulse { animation: pulse-alert 1s ease-in-out infinite; }
+    .slide-in { animation: slide-in 0.3s ease-out; }
+    .fade-in { animation: fade-in 0.4s ease-out; }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .meter-ring {
+      stroke-dasharray: 251;
+      stroke-dashoffset: 251;
+      transition: stroke-dashoffset 1s ease-out;
+    }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 3px; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-slate-950 text-white overflow-auto">
+  <div id="app" class="h-full w-full flex"><!-- Sidebar -->
+   <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0">
+    <div class="p-6 border-b border-slate-800">
+     <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+       </svg>
+      </div>
+      <div>
+       <h1 id="company-name" class="font-bold text-lg text-white">PowerGuard</h1>
+       <p class="text-xs text-slate-400">Theft Detection</p>
+      </div>
+     </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-2"><button onclick="switchDashboard('overview')" id="nav-overview" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-emerald-500/20 text-emerald-400 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg> Overview </button> <button onclick="switchDashboard('alerts')" id="nav-alerts" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg> Alerts <span id="alert-badge" class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span> </button> <button onclick="switchDashboard('meters')" id="nav-meters" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg> Meters </button> <button onclick="switchDashboard('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+      </svg> Analytics </button> <button onclick="switchDashboard('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg> Settings </button>
+    </nav>
+    <div class="p-4 border-t border-slate-800">
+     <div class="glass-card rounded-lg p-4">
+      <div class="flex items-center gap-2 mb-2">
+       <div id="system-status-dot" class="w-2 h-2 bg-emerald-500 rounded-full"></div><span class="text-xs text-slate-400">System Status</span>
+      </div>
+      <p id="system-status-text" class="text-sm font-medium text-emerald-400">All Systems Online</p>
+     </div>
+    </div>
+   </aside><!-- Main Content -->
+   <main class="flex-1 overflow-auto"><!-- Header -->
+    <header class="bg-slate-900/50 border-b border-slate-800 px-6 py-4 sticky top-0 z-10 backdrop-blur-sm">
+     <div class="flex items-center justify-between">
+      <div>
+       <h2 id="dashboard-title" class="text-xl font-semibold">Dashboard Overview</h2>
+       <p class="text-sm text-slate-400" id="current-time"></p>
+      </div>
+      <div class="flex items-center gap-4"><button onclick="simulateBuzzerAlert()" class="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg> Simulate Buzzer </button>
+       <div id="notification-bell" class="relative cursor-pointer" onclick="toggleNotifications()">
+        <svg class="w-6 h-6 text-slate-400 hover:text-white transition-colors" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg><span id="notif-count" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+       </div>
+      </div>
+     </div>
+    </header><!-- Alert Banner -->
+    <div id="alert-banner" class="hidden bg-red-500/20 border-b border-red-500/50 px-6 py-3">
+     <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center alert-pulse">
+       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+       </svg>
+      </div>
+      <div class="flex-1">
+       <p id="alert-banner-text" class="font-medium text-red-400">⚠️ BUZZER ALERT DETECTED!</p>
+       <p id="alert-banner-detail" class="text-sm text-red-300/70">Potential theft detected at Meter #MTR-2847</p>
+      </div><button onclick="dismissBanner()" class="text-red-400 hover:text-red-300">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+       </svg></button>
+     </div>
+    </div><!-- Dashboard Panels -->
+    <div class="p-6"><!-- Overview Dashboard -->
+     <div id="dashboard-overview" class="dashboard-panel"><!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+       <div class="glass-card rounded-xl p-5 fade-in">
+        <div class="flex items-center justify-between mb-3"><span class="text-slate-400 text-sm">Total Meters</span>
+         <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+         </div>
+        </div>
+        <p class="text-3xl font-bold text-white">1,247</p>
+        <p class="text-xs text-emerald-400 mt-1">↑ 12 new this week</p>
+       </div>
+       <div class="glass-card rounded-xl p-5 fade-in" style="animation-delay: 0.1s">
+        <div class="flex items-center justify-between mb-3"><span class="text-slate-400 text-sm">Active Alerts</span>
+         <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+         </div>
+        </div>
+        <p id="active-alerts-count" class="text-3xl font-bold text-white">0</p>
+        <p class="text-xs text-slate-400 mt-1">Requires attention</p>
+       </div>
+       <div class="glass-card rounded-xl p-5 fade-in" style="animation-delay: 0.2s">
+        <div class="flex items-center justify-between mb-3"><span class="text-slate-400 text-sm">Theft Detected</span>
+         <div class="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+         </div>
+        </div>
+        <p id="theft-count" class="text-3xl font-bold text-white">0</p>
+        <p class="text-xs text-slate-400 mt-1">This month</p>
+       </div>
+       <div class="glass-card rounded-xl p-5 fade-in" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between mb-3"><span class="text-slate-400 text-sm">System Health</span>
+         <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+         </div>
+        </div>
+        <p class="text-3xl font-bold text-emerald-400">98.7%</p>
+        <p class="text-xs text-slate-400 mt-1">Uptime</p>
+       </div>
+      </div><!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6"><!-- Detection Chart -->
+       <div class="lg:col-span-2 glass-card rounded-xl p-5">
+        <h3 class="text-lg font-semibold mb-4">Theft Detection Trend</h3>
+        <div class="h-48 flex items-end gap-2">
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/30 rounded-t" style="height: 60%"></div><span class="text-xs text-slate-400 mt-2">Mon</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/50 rounded-t" style="height: 40%"></div><span class="text-xs text-slate-400 mt-2">Tue</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/70 rounded-t" style="height: 80%"></div><span class="text-xs text-slate-400 mt-2">Wed</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-red-500/70 rounded-t" style="height: 95%"></div><span class="text-xs text-slate-400 mt-2">Thu</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/40 rounded-t" style="height: 35%"></div><span class="text-xs text-slate-400 mt-2">Fri</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/20 rounded-t" style="height: 20%"></div><span class="text-xs text-slate-400 mt-2">Sat</span>
+         </div>
+         <div class="flex-1 flex flex-col items-center">
+          <div class="w-full bg-emerald-500/30 rounded-t" style="height: 45%"></div><span class="text-xs text-slate-400 mt-2">Sun</span>
+         </div>
+        </div>
+       </div><!-- Detection Meter -->
+       <div class="glass-card rounded-xl p-5">
+        <h3 class="text-lg font-semibold mb-4">Detection Rate</h3>
+        <div class="flex items-center justify-center">
+         <svg class="w-40 h-40" viewbox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#1e293b" stroke-width="8" /> <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" class="meter-ring" style="stroke-dashoffset: 50; transform: rotate(-90deg); transform-origin: center;" /> <text x="50" y="50" text-anchor="middle" dy="0.3em" class="text-2xl font-bold fill-white">
+           94.2%
+          </text> <text x="50" y="65" text-anchor="middle" class="text-xs fill-slate-400">
+           Accuracy
+          </text>
+         </svg>
+        </div>
+       </div>
+      </div><!-- Recent Alerts -->
+      <div class="glass-card rounded-xl p-5">
+       <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Recent Alerts</h3><button onclick="switchDashboard('alerts')" class="text-sm text-emerald-400 hover:text-emerald-300">View All →</button>
+       </div>
+       <div id="recent-alerts-list" class="space-y-3">
+        <div class="text-center py-8 text-slate-400">
+         <svg class="w-12 h-12 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg>
+         <p>No alerts detected</p>
+         <p class="text-sm">System is monitoring for anomalies</p>
+        </div>
+       </div>
+      </div>
+     </div><!-- Alerts Dashboard -->
+     <div id="dashboard-alerts" class="dashboard-panel hidden">
+      <div class="flex items-center justify-between mb-6">
+       <h3 class="text-xl font-semibold">Alert Management</h3>
+       <div class="flex gap-2"><select id="alert-filter" onchange="filterAlerts()" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm"> <option value="all">All Alerts</option> <option value="critical">Critical</option> <option value="warning">Warning</option> <option value="resolved">Resolved</option> </select>
+       </div>
+      </div>
+      <div id="alerts-container" class="space-y-3">
+       <div class="text-center py-12 text-slate-400">
+        <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-lg">No alerts to display</p>
+        <p class="text-sm">Click "Simulate Buzzer" to test the alert system</p>
+       </div>
+      </div>
+     </div><!-- Meters Dashboard -->
+     <div id="dashboard-meters" class="dashboard-panel hidden">
+      <div class="flex items-center justify-between mb-6">
+       <h3 class="text-xl font-semibold">Meter Monitoring</h3>
+       <div class="flex gap-2"><input type="text" placeholder="Search meters..." class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm w-64">
+       </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Sample Meter Cards -->
+       <div class="glass-card rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><span class="text-sm font-medium text-slate-400">MTR-2847</span> <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">Normal</span>
+        </div>
+        <div class="mb-3">
+         <p class="text-2xl font-bold">4.2 kWh</p>
+         <p class="text-xs text-slate-400">Current consumption</p>
+        </div>
+        <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Zone A - Block 12</span> <span class="text-emerald-400">●</span>
+        </div>
+       </div>
+       <div class="glass-card rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><span class="text-sm font-medium text-slate-400">MTR-3156</span> <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full">Anomaly</span>
+        </div>
+        <div class="mb-3">
+         <p class="text-2xl font-bold">12.8 kWh</p>
+         <p class="text-xs text-slate-400">Current consumption</p>
+        </div>
+        <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Zone B - Block 7</span> <span class="text-amber-400">●</span>
+        </div>
+       </div>
+       <div class="glass-card rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><span class="text-sm font-medium text-slate-400">MTR-4892</span> <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">Normal</span>
+        </div>
+        <div class="mb-3">
+         <p class="text-2xl font-bold">2.1 kWh</p>
+         <p class="text-xs text-slate-400">Current consumption</p>
+        </div>
+        <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Zone C - Block 3</span> <span class="text-emerald-400">●</span>
+        </div>
+       </div>
+       <div class="glass-card rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><span class="text-sm font-medium text-slate-400">MTR-5234</span> <span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">Alert</span>
+        </div>
+        <div class="mb-3">
+         <p class="text-2xl font-bold">28.4 kWh</p>
+         <p class="text-xs text-slate-400">Current consumption</p>
+        </div>
+        <div class="flex items-center justify-between text-sm"><span class="text-slate-400">Zone A - Block 9</span> <span class="text-red-400 alert-pulse">●</span>
+        </div>
+       </div>
+ 
