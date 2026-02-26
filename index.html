@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Electricity Theft Detection AI</title>
+<title>Smart Electricity Theft Detection</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body{
-    margin:0;
-    font-family:'Segoe UI',sans-serif;
-    overflow-x:hidden;
+margin:0;
+font-family:'Segoe UI',sans-serif;
+overflow:hidden;
 }
 
 /* Animated Background */
 .bg-animate{
-    position:fixed;
-    width:100%;
-    height:100%;
-    background: linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1c1c1c);
-    background-size:400% 400%;
-    animation:gradient 15s ease infinite;
-    z-index:-1;
+position:fixed;
+width:100%;
+height:100%;
+background:linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1c1c1c);
+background-size:400% 400%;
+animation:gradient 15s ease infinite;
+z-index:-1;
 }
 @keyframes gradient{
 0%{background-position:0% 50%;}
@@ -30,21 +30,23 @@ body{
 100%{background-position:0% 50%;}
 }
 
-/* Glass */
+/* Glass Effect */
 .glass{
-    background:rgba(255,255,255,0.05);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    box-shadow:0 0 25px rgba(0,255,255,0.2);
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(10px);
+border-radius:20px;
+box-shadow:0 0 25px rgba(0,255,255,0.2);
 }
 
+.hidden{display:none;}
+
 .radar{
-width:200px;
-height:200px;
+width:150px;
+height:150px;
 border-radius:50%;
 border:2px solid rgba(0,255,0,0.4);
-position:relative;
 margin:auto;
+position:relative;
 }
 .radar::after{
 content:'';
@@ -59,8 +61,6 @@ animation:pulse 2s infinite;
 0%{transform:scale(1);opacity:1;}
 100%{transform:scale(1.5);opacity:0;}
 }
-
-.hidden{display:none;}
 </style>
 </head>
 
@@ -68,9 +68,9 @@ animation:pulse 2s infinite;
 
 <div class="bg-animate"></div>
 
-<!-- LOGIN -->
-<div id="loginPage" class="flex items-center justify-center h-screen">
-<div class="glass p-8 w-96 text-white text-center">
+<!-- ================= LOGIN ================= -->
+<div id="loginPage" class="flex items-center justify-center h-screen text-white">
+<div class="glass p-8 w-96 text-center">
 <h2 class="text-2xl font-bold mb-6">⚡ Admin Login</h2>
 
 <input id="email" type="email" placeholder="Email"
@@ -88,68 +88,100 @@ Login
 </div>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboardPage" class="hidden p-6 text-white">
+<!-- ================= DASHBOARD ================= -->
+<div id="dashboardPage" class="hidden text-white">
 
-<div class="flex justify-between items-center mb-6">
-<h1 class="text-3xl font-bold">⚡ Smart Theft Detection</h1>
-<button onclick="logout()" class="bg-red-500 px-4 py-2 rounded">Logout</button>
+<div class="flex">
+
+<!-- Sidebar -->
+<div class="w-64 h-screen glass p-6 space-y-4">
+<h2 class="text-xl font-bold mb-6">⚡ Smart Panel</h2>
+
+<button onclick="showPage('overview')" class="w-full text-left p-2 rounded hover:bg-cyan-500">📊 Overview</button>
+<button onclick="showPage('power')" class="w-full text-left p-2 rounded hover:bg-cyan-500">⚡ Power</button>
+<button onclick="showPage('sensor')" class="w-full text-left p-2 rounded hover:bg-cyan-500">🧠 Sensors</button>
+<button onclick="showPage('status')" class="w-full text-left p-2 rounded hover:bg-cyan-500">🚨 Status</button>
+
+<button onclick="logout()" class="bg-red-500 w-full p-2 rounded mt-6">Logout</button>
 </div>
+
+<!-- Main Content -->
+<div class="flex-1 p-6 overflow-y-auto h-screen">
+
+<!-- Overview -->
+<div id="overview" class="page">
+<h1 class="text-3xl font-bold mb-6">Dashboard Overview</h1>
 
 <div class="grid md:grid-cols-4 gap-6 mb-6">
-<div class="glass p-4 text-center">
+<div class="glass p-6 text-center">
 <h3>Total Meters</h3>
-<p id="stat-total-meters" class="text-2xl font-bold">0</p>
+<p id="stat-total-meters" class="text-3xl font-bold">0</p>
 </div>
 
-<div class="glass p-4 text-center">
+<div class="glass p-6 text-center">
 <h3>Normal</h3>
-<p id="stat-normal" class="text-green-400 text-2xl font-bold">0</p>
+<p id="stat-normal" class="text-green-400 text-3xl font-bold">0</p>
 </div>
 
-<div class="glass p-4 text-center">
+<div class="glass p-6 text-center">
 <h3>Suspicious</h3>
-<p id="stat-suspicious" class="text-yellow-400 text-2xl font-bold">0</p>
+<p id="stat-suspicious" class="text-yellow-400 text-3xl font-bold">0</p>
 </div>
 
-<div id="theftBox" class="glass p-4 text-center hidden">
-<h3>Theft Alert</h3>
-<p id="stat-theft" class="text-red-500 text-2xl font-bold">0</p>
+<div id="theftBox" class="glass p-6 text-center hidden">
+<h3>Theft</h3>
+<p id="stat-theft" class="text-red-500 text-3xl font-bold">0</p>
 </div>
 </div>
 
-<div class="grid md:grid-cols-3 gap-6 mb-6">
-<div class="glass p-4 text-center">
-<h3>Meter Reading</h3>
-<p id="meterReading" class="text-2xl font-bold">0</p>
+<div class="radar"></div>
 </div>
 
-<div class="glass p-4 text-center">
-<h3>Power Flow</h3>
-<p id="powerFlow" class="text-2xl font-bold">0</p>
-</div>
-
-<div class="glass p-4 text-center">
-<h3>System Status</h3>
-<p id="systemStatus" class="text-2xl font-bold">Unknown</p>
-</div>
-</div>
+<!-- Power -->
+<div id="power" class="page hidden">
+<h1 class="text-3xl font-bold mb-6">Power Monitoring</h1>
 
 <div class="grid md:grid-cols-2 gap-6">
-<div class="glass p-4 text-center">
+<div class="glass p-8 text-center">
+<h3>Meter Reading (kWh)</h3>
+<p id="meterReading" class="text-4xl font-bold">0</p>
+</div>
+
+<div class="glass p-8 text-center">
+<h3>Power Flow (W)</h3>
+<p id="powerFlow" class="text-4xl font-bold">0</p>
+</div>
+</div>
+</div>
+
+<!-- Sensors -->
+<div id="sensor" class="page hidden">
+<h1 class="text-3xl font-bold mb-6">Sensor Analytics</h1>
+
+<div class="grid md:grid-cols-2 gap-6">
+<div class="glass p-8 text-center">
 <h3>Sensor 1</h3>
-<p id="sensor1-value" class="text-2xl font-bold">0</p>
+<p id="sensor1-value" class="text-4xl font-bold">0</p>
 </div>
 
-<div class="glass p-4 text-center">
+<div class="glass p-8 text-center">
 <h3>Sensor 2</h3>
-<p id="sensor2-value" class="text-2xl font-bold">0</p>
+<p id="sensor2-value" class="text-4xl font-bold">0</p>
+</div>
 </div>
 </div>
 
-<br><br>
-<div class="radar"></div>
+<!-- Status -->
+<div id="status" class="page hidden">
+<h1 class="text-3xl font-bold mb-6">System Status</h1>
+<div class="glass p-10 text-center">
+<h3>Current Condition</h3>
+<p id="systemStatus" class="text-4xl font-bold mt-4">Unknown</p>
+</div>
+</div>
 
+</div>
+</div>
 </div>
 
 <!-- ALERT SOUND -->
@@ -162,26 +194,24 @@ Login
 <div class="bg-red-600 text-white p-6 rounded-xl text-center shadow-xl">
 <h2 class="text-2xl font-bold mb-4">⚠ ELECTRICITY THEFT DETECTED</h2>
 <p class="mb-4">Immediate action required!</p>
-<button onclick="closeAlert()" class="bg-white text-red-600 px-4 py-2 rounded font-bold">
-Close
-</button>
+<button onclick="closeAlert()" class="bg-white text-red-600 px-4 py-2 rounded font-bold">Close</button>
 </div>
 </div>
 
-<!-- FIREBASE -->
+<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-const firebaseConfig = {
-apiKey: "AlzaSyAXmOoO-Js2jRN6eUeZ4fVTUzutdrOoL_g",
-authDomain: "electricity-theft-detect-74a20.firebaseapp.com",
-databaseURL: "https://electricity-theft-detect-74a20-default-rtdb.asia-southeast1.firebasedatabase.app",
-projectId: "electricity-theft-detect-74a20"
+const firebaseConfig={
+apiKey:"AlzaSyAXmOoO-Js2jRN6eUeZ4fVTUzutdrOoL_g",
+authDomain:"electricity-theft-detect-74a20.firebaseapp.com",
+databaseURL:"https://electricity-theft-detect-74a20-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId:"electricity-theft-detect-74a20"
 };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const app=initializeApp(firebaseConfig);
+const database=getDatabase(app);
 
 let alertTriggered=false;
 
@@ -190,11 +220,8 @@ if(alertTriggered) return;
 alertTriggered=true;
 document.getElementById("alertSound").play();
 document.getElementById("alertModal").classList.remove("hidden");
-
 if(Notification.permission==="granted"){
-new Notification("⚡ Theft Detected!",{
-body:"Electricity theft has been detected!"
-});
+new Notification("⚡ Theft Detected!",{body:"Electricity theft detected!"});
 }
 }
 
@@ -202,13 +229,13 @@ onValue(ref(database,"dashboard"),(snapshot)=>{
 const data=snapshot.val();
 if(!data) return;
 
-document.getElementById("stat-total-meters").textContent=data.totalMeters||0;
-document.getElementById("stat-normal").textContent=data.normal||0;
-document.getElementById("stat-suspicious").textContent=data.suspicious||0;
-document.getElementById("stat-theft").textContent=data.theft||0;
-document.getElementById("meterReading").textContent=data.meterReading||0;
-document.getElementById("powerFlow").textContent=data.powerFlow||0;
-document.getElementById("systemStatus").textContent=data.systemStatus||"Unknown";
+stat("stat-total-meters",data.totalMeters);
+stat("stat-normal",data.normal);
+stat("stat-suspicious",data.suspicious);
+stat("stat-theft",data.theft);
+stat("meterReading",data.meterReading);
+stat("powerFlow",data.powerFlow);
+stat("systemStatus",data.systemStatus);
 
 if(data.theft>0 || data.systemStatus==="Alert"){
 document.getElementById("theftBox").classList.remove("hidden");
@@ -222,35 +249,37 @@ alertTriggered=false;
 onValue(ref(database,"sensor"),(snapshot)=>{
 const s=snapshot.val();
 if(!s) return;
-document.getElementById("sensor1-value").textContent=s.sensor1||0;
-document.getElementById("sensor2-value").textContent=s.sensor2||0;
+stat("sensor1-value",s.sensor1);
+stat("sensor2-value",s.sensor2);
 });
+
+function stat(id,val){
+document.getElementById(id).textContent=val||0;
+}
 </script>
 
 <script>
-if("Notification" in window){
-Notification.requestPermission();
-}
+if("Notification" in window){Notification.requestPermission();}
 
 function login(){
-const email=document.getElementById("email").value;
-const pass=document.getElementById("password").value;
-
-if(email==="admin@gmail.com" && pass==="123456"){
-document.getElementById("loginPage").classList.add("hidden");
-document.getElementById("dashboardPage").classList.remove("hidden");
-}else{
-alert("Invalid Login");
-}
+if(email.value==="admin@gmail.com" && password.value==="123456"){
+loginPage.classList.add("hidden");
+dashboardPage.classList.remove("hidden");
+}else{alert("Invalid Login");}
 }
 
 function logout(){
-document.getElementById("dashboardPage").classList.add("hidden");
-document.getElementById("loginPage").classList.remove("hidden");
+dashboardPage.classList.add("hidden");
+loginPage.classList.remove("hidden");
+}
+
+function showPage(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
 }
 
 function closeAlert(){
-document.getElementById("alertModal").classList.add("hidden");
+alertModal.classList.add("hidden");
 }
 </script>
 
