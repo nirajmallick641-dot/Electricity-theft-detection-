@@ -1,120 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Electricity Theft Detection</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electricity Theft Detection</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: white;
-            margin: 0;
-            padding: 20px;
-        }
+<script src="https://cdn.tailwindcss.com"></script>
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+<style>
+body{
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:white;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
+.card{
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding:20px;
+    box-shadow: 0 0 20px rgba(0,255,255,0.2);
+    transition:0.3s;
+}
+.card:hover{
+    transform:scale(1.03);
+}
 
-        .card {
-            background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0,0,0,0.4);
-        }
-
-        .card h2 {
-            margin: 10px 0;
-            font-size: 28px;
-        }
-
-        .status-normal { color: #22c55e; }
-        .status-alert { color: #ef4444; }
-
-        .hidden { display: none; }
-
-        .badge {
-            background: red;
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-        }
-    </style>
+.glow{
+    box-shadow:0 0 15px red;
+}
+</style>
 </head>
 
-<body>
+<body class="p-6">
 
-<h1>⚡ Electricity Theft Detection Dashboard</h1>
+<h1 class="text-3xl font-bold text-center mb-8">⚡ Electricity Theft Detection Dashboard</h1>
 
-<div class="dashboard">
+<div class="grid md:grid-cols-4 gap-6">
 
-    <div class="card">
-        <h3>Total Meters</h3>
-        <h2 id="stat-total-meters">0</h2>
+    <div class="card text-center">
+        <h2>Total Meters</h2>
+        <p id="stat-total-meters" class="text-2xl font-bold">0</p>
     </div>
 
-    <div class="card">
-        <h3>Normal</h3>
-        <h2 id="stat-normal">0</h2>
+    <div class="card text-center">
+        <h2>Normal</h2>
+        <p id="stat-normal" class="text-2xl font-bold text-green-400">0</p>
     </div>
 
-    <div class="card">
-        <h3>Suspicious</h3>
-        <h2 id="stat-suspicious">0</h2>
+    <div class="card text-center">
+        <h2>Suspicious</h2>
+        <p id="stat-suspicious" class="text-2xl font-bold text-yellow-400">0</p>
     </div>
 
-    <div class="card">
-        <h3>Theft Cases</h3>
-        <h2 id="stat-theft">0</h2>
-        <div id="theft-badge" class="badge hidden">ALERT</div>
-    </div>
-
-    <div class="card">
-        <h3>Meter Reading</h3>
-        <h2><span id="meterReading">0</span> kWh</h2>
-    </div>
-
-    <div class="card">
-        <h3>Live Power Flow</h3>
-        <h2><span id="powerFlow">0</span> W</h2>
-    </div>
-
-    <div class="card">
-        <h3>System Status</h3>
-        <h2 id="systemStatus" class="status-normal">Loading...</h2>
-    </div>
-
-    <div class="card">
-        <h3>Sensor 1</h3>
-        <h2><span id="sensor1">0</span></h2>
-    </div>
-
-    <div class="card">
-        <h3>Sensor 2</h3>
-        <h2><span id="sensor2">0</span></h2>
+    <div class="card text-center glow hidden" id="theft-badge">
+        <h2>Theft Detected</h2>
+        <p id="stat-theft" class="text-2xl font-bold text-red-500">0</p>
     </div>
 
 </div>
 
+<br>
 
-<!-- Firebase Script -->
+<div class="grid md:grid-cols-3 gap-6">
+
+    <div class="card text-center">
+        <h2>Meter Reading (kWh)</h2>
+        <p id="meterReading" class="text-2xl font-bold">0</p>
+    </div>
+
+    <div class="card text-center">
+        <h2>Live Power Flow (W)</h2>
+        <p id="powerFlow" class="text-2xl font-bold">0</p>
+    </div>
+
+    <div class="card text-center">
+        <h2>System Status</h2>
+        <p id="systemStatus" class="text-2xl font-bold">Unknown</p>
+    </div>
+
+</div>
+
+<br>
+
+<div class="grid md:grid-cols-2 gap-6">
+
+    <div class="card text-center">
+        <h2>Sensor 1</h2>
+        <p id="sensor1-value" class="text-2xl font-bold">0</p>
+    </div>
+
+    <div class="card text-center">
+        <h2>Sensor 2</h2>
+        <p id="sensor2-value" class="text-2xl font-bold">0</p>
+    </div>
+
+</div>
+
+<!-- ================= FIREBASE ================= -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAXmOoO-Js2jRN6eUeZ4fVTUzutdrOoL_g",
+  apiKey: "YOUR_API_KEY",
   authDomain: "electricity-theft-detect-74a20.firebaseapp.com",
   databaseURL: "https://electricity-theft-detect-74a20-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "electricity-theft-detect-74a20",
@@ -126,50 +116,41 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
+// Dashboard
+const dashboardRef = ref(database, "dashboard");
 
-// ===== DASHBOARD DATA =====
-const dashRef = ref(database, "dashboard");
-
-onValue(dashRef, (snapshot) => {
+onValue(dashboardRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
+    if(!data) return;
 
-    document.getElementById("stat-total-meters").innerText = data.totalMeters || 0;
-    document.getElementById("stat-normal").innerText = data.normal || 0;
-    document.getElementById("stat-suspicious").innerText = data.suspicious || 0;
-    document.getElementById("stat-theft").innerText = data.theft || 0;
+    document.getElementById("stat-total-meters").textContent = data.totalMeters || 0;
+    document.getElementById("stat-normal").textContent = data.normal || 0;
+    document.getElementById("stat-suspicious").textContent = data.suspicious || 0;
+    document.getElementById("stat-theft").textContent = data.theft || 0;
+    document.getElementById("meterReading").textContent = data.meterReading || 0;
+    document.getElementById("powerFlow").textContent = data.powerFlow || 0;
 
-    document.getElementById("meterReading").innerText = data.meterReading || 0;
-    document.getElementById("powerFlow").innerText = data.powerFlow || 0;
+    const statusEl = document.getElementById("systemStatus");
+    statusEl.textContent = data.systemStatus || "Unknown";
 
-    const statusElement = document.getElementById("systemStatus");
-    statusElement.innerText = data.systemStatus || "Unknown";
-
-    if (data.systemStatus === "Alert") {
-        statusElement.classList.remove("status-normal");
-        statusElement.classList.add("status-alert");
-    } else {
-        statusElement.classList.remove("status-alert");
-        statusElement.classList.add("status-normal");
-    }
-
-    if (data.theft > 0) {
+    if(data.systemStatus === "Alert"){
+        statusEl.classList.add("text-red-500");
         document.getElementById("theft-badge").classList.remove("hidden");
-    } else {
+    }else{
+        statusEl.classList.remove("text-red-500");
         document.getElementById("theft-badge").classList.add("hidden");
     }
 });
 
-
-// ===== SENSOR DATA =====
+// Sensors
 const sensorRef = ref(database, "sensor");
 
 onValue(sensorRef, (snapshot) => {
-    const sdata = snapshot.val();
-    if (!sdata) return;
+    const sensor = snapshot.val();
+    if(!sensor) return;
 
-    document.getElementById("sensor1").innerText = sdata.sensor1 || 0;
-    document.getElementById("sensor2").innerText = sdata.sensor2 || 0;
+    document.getElementById("sensor1-value").textContent = sensor.sensor1 || 0;
+    document.getElementById("sensor2-value").textContent = sensor.sensor2 || 0;
 });
 
 </script>
